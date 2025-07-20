@@ -5,3 +5,8 @@ edition = "2024"
 
 [dependencies]
 git2 = "0.20.2"
+ollama-rs = "0.3.2"
+env_logger = "0.11.8"
+log = "0.4.17"
+config = "0.15.13"
+clap = "4.5.41"

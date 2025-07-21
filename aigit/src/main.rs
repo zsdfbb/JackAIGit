@@ -1,9 +1,8 @@
-use std::env;
 use log::{debug, info, error};
 
-mod ollama;
+mod command;
 
-const VERSION: &str = "1.0.0";
+// const VERSION: &str = "1.0.0";
 
 fn logger_init(log_level: String) {
     let mut elog_builder = env_logger::Builder::new();
@@ -21,4 +20,8 @@ fn logger_init(log_level: String) {
 
 fn main() {
     logger_init(String::from("debug"));
+
+
+    command::parse_args();
+    command::parse_subcommand();
 }

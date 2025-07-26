@@ -2,26 +2,19 @@ use reqwest::blocking::{Client};
 use serde::{Deserialize, Serialize};
 use log::{error, debug};
 
-
-#[derive(Debug, Serialize)]
-struct Message {
-    role: String,
-    content: String,
+// 定义消息结构
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChatMessage {
+    pub role: String,
+    pub content: String,
 }
 
 // API请求数据结构
 #[derive(Debug, Serialize)]
 struct ChatRequest {
     model: String,
-    messages: Vec<Message>,
+    messages: Vec<ChatMessage>,
     stream: bool,
-}
-
-// 定义消息结构
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ChatMessage {
-    pub role: String,
-    pub content: String,
 }
 
 
@@ -70,7 +63,7 @@ fn extract_think_and_answer(content: &str) -> Option<(String, String)> {
     None
 }
 
-pub fn call(text: &str, model:String, _api_key: String, msgs: Vec<Message>) -> Result<(), Box<dyn std::error::Error>> 
+pub fn call(model:String, _api_key: String, msgs: Vec<ChatMessage>) -> Result<(), Box<dyn std::error::Error>> 
 {
     // 构建请求
     let endpoint = "http://localhost:11434/api/chat";
@@ -109,4 +102,23 @@ pub fn call(text: &str, model:String, _api_key: String, msgs: Vec<Message>) -> R
     }
 
     return Ok(());
+}
+
+pub fn test() -> Result<(), Box<dyn std::error::Error>> {
+    let msgs: Vec<ChatMessage> = vec![
+        ChatMessage {
+            role: "system".to_string(),
+            content: "You are a helpful assistant.".to_string(),
+        },
+        ChatMessage {
+            role: "user".to_string(),
+            content: "What is the meaning of life?".to_string(),
+        },
+    ];
+    let resp = call("deepseek-r1:8b".to_string(),
+                        "Do not need".to_string(),
+                        msgs)?;
+    println!("{:?}", resp);
+
+    Ok(())
 }

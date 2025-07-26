@@ -1,6 +1,7 @@
 use log::{debug, info, error};
 
 mod command;
+mod ollama;
 
 // const VERSION: &str = "1.0.0";
 
@@ -21,7 +22,9 @@ fn logger_init(log_level: String) {
 fn main() {
     logger_init(String::from("debug"));
 
+    info!("Starting aigit...");
+    debug!("test ollama api...");
+    let test = ollama::test();
+    debug!("test result: {:?}", test);
 
-    command::parse_args();
-    command::parse_subcommand();
 }

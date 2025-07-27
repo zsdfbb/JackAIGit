@@ -1,58 +1,86 @@
+use std::error::Error;
 use clap::Parser;
 
-/*
- * 基于 clap 实现 aigit 的命令行参数解析
- */
-
- #[derive(Parser)]
- struct Cli {
-     #[command(subcommand)]
-     command: Commands,
- }
- 
- #[derive(clap::Subcommand, Debug)]
- enum Commands {
-     /// 上传文件
-     Upload { 
-         #[arg(short)] file: String 
-     },
-     /// 删除文件
-     Delete { 
-         #[arg(short)] id: u32 
-     },
- }
-
-#[derive(Parser, Debug)]
-#[command(version, about)] // 自动生成版本/帮助信息
-pub struct Args {
-    /// 用户名（必填）
-    #[arg(short, long)] 
-    name: String,
-
-    /// 执行次数（可选，默认值=1）
-    #[arg(short, long, default_value_t = 1)]
-    count: u8,
-
-    /// 启用调试模式（布尔标志）
-    #[arg(short, long)]
-    debug: bool,
+#[derive(Parser)]
+#[command(version, author, about, long_about = None)]
+struct Cli {
+    // subcommand
+    #[command(subcommand)]
+    command: Commands,
 }
 
-pub fn parse_args() -> Args {
-    let args = Args::parse(); // 解析参数
-    for _ in 0..args.count {
-        println!("Hello, {}!", args.name);
-    }
-    if args.debug {
-        println!("[DEBUG] Execution complete");
-    }
-    args
+#[derive(clap::Subcommand, Debug)]
+enum Commands {
+    /// Show the diff between the working tree and the index
+    Diff {
+        /// specify the commit index such as HEAD^
+        index: String,
+        /// explain the diff between the working tree and the index
+        #[arg(short, long)] explain: bool,
+    },
+    /// Commit the current changes
+    Commit {
+        /// specify the commit message
+        #[arg(short, long)] message: Option<String>,
+        /// generate commit message
+        #[arg(short, long)] explain: bool,
+    },
+    /// List all commits
+    List {
+        /// number of commits
+        #[arg(short, long)] number: Option<u32>,
+        /// explain selected commit
+        #[arg(short, long)] explain: bool,
+    },
 }
 
-pub fn parse_subcommand() {
+pub fn handle() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Upload { file } => println!("Uploading: {}", file),
-        Commands::Delete { id } => println!("Deleting ID: {}", id),
+        Commands::Diff {index, explain} => {
+            
+        }
+        Commands::Commit { message, explain } => {
+            
+        }
+        Commands::List { number, explain } => {
+           
+        }
     }
+
+    Ok(())
+}
+
+
+/*
+ * ===========================================================
+ * test code
+ */
+#[cfg(feature = "test")]
+fn test_options() {
+    println!("command: test options");
+}
+
+#[cfg(feature = "test")]
+fn test_parse_subcommand() {
+    println!("command: test subcommand");
+
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::Diff { index , explain} => {
+            println!("Diff index: {}, explain: {:?}", index, explain);
+        }
+        Commands::Commit { message, explain } => {
+            println!("Commit specify message: {:?}, explain: {:?}", message, explain);
+        },
+        Commands::List { number, explain } => {
+            println!("List num: {:?}, explain: {:?}", number, explain);
+        },
+    }
+}
+
+#[cfg(feature = "test")]
+pub fn test() {
+    test_options();
+    test_parse_subcommand();
 }

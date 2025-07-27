@@ -88,7 +88,6 @@ pub fn call(model:String, _api_key: String, msgs: Vec<ChatMessage>) -> Result<()
         Ok(response) => {
             // 提取思考过程
             if let Some((__think, answer)) = extract_think_and_answer(&response.message.content) {
-                debug!("翻译结果:");
                 println!("{}", answer);
             }
         }
@@ -104,6 +103,11 @@ pub fn call(model:String, _api_key: String, msgs: Vec<ChatMessage>) -> Result<()
     return Ok(());
 }
 
+/*
+ * ===========================================================
+ * test code
+ */
+#[cfg(feature = "test")]
 pub fn test() -> Result<(), Box<dyn std::error::Error>> {
     let msgs: Vec<ChatMessage> = vec![
         ChatMessage {
@@ -112,13 +116,12 @@ pub fn test() -> Result<(), Box<dyn std::error::Error>> {
         },
         ChatMessage {
             role: "user".to_string(),
-            content: "What is the meaning of life?".to_string(),
+            content: "hello.".to_string(),
         },
     ];
-    let resp = call("deepseek-r1:8b".to_string(),
+    let _resp = call("deepseek-r1:8b".to_string(),
                         "Do not need".to_string(),
                         msgs)?;
-    println!("{:?}", resp);
 
     Ok(())
 }

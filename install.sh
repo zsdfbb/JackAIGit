@@ -21,8 +21,12 @@ else
 fi
 
 # install aigit
-cd aigit
+pushd aigit
 cargo build --release
 cp target/release/aigit ${HOME}/.local/bin
+popd
+
+mkdir -p ${HOME}/.config/aigit
+cp ./aigit.toml ${HOME}/.config/aigit/config.toml
 
 echo "Install AIGit successfully."

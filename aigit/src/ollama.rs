@@ -1,22 +1,8 @@
-use reqwest::blocking::{Client};
+use log::{debug, error};
+use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
-use log::{error, debug};
 
-// 定义消息结构
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ChatMessage {
-    pub role: String,
-    pub content: String,
-}
-
-// API请求数据结构
-#[derive(Debug, Serialize)]
-struct ChatRequest {
-    model: String,
-    messages: Vec<ChatMessage>,
-    stream: bool,
-}
-
+use crate::api::{ChatMessage, ChatRequest};
 
 // 定义完整的响应结构
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,25 +32,32 @@ pub struct OllamaChatResponse {
 fn extract_think_and_answer(content: &str) -> Option<(String, String)> {
     let think_start = "<think>";
     let think_end = "</think>";
-    
+
     if let Some(start_idx) = content.find(think_start) {
         /* This is for thinking model */
         let think_start = start_idx + think_start.len();
         if let Some(end_idx) = content[think_start..].find(think_end) {
-            let think_content = content[think_start..think_start + end_idx].trim().to_string();
-            let answer = content[think_start + end_idx + think_end.len()..].trim().to_string();
+            let think_content = content[think_start..think_start + end_idx]
+                .trim()
+                .to_string();
+            let answer = content[think_start + end_idx + think_end.len()..]
+                .trim()
+                .to_string();
             return Some((think_content, answer));
         }
     } else {
         /* this is for no thinking model */
         return Some(("".to_string(), content.trim().to_string()));
     }
-    
+
     None
 }
 
-pub fn call(model:String, _api_key: String, msgs: Vec<ChatMessage>) -> Result<(), Box<dyn std::error::Error>> 
-{
+pub fn chat(
+    model: String,
+    _api_key: String,
+    msgs: Vec<ChatMessage>,
+) -> Result<(), Box<dyn std::error::Error>> {
     // 构建请求
     let endpoint = "http://localhost:11434/api/chat";
     let client = Client::new();
@@ -75,12 +68,8 @@ pub fn call(model:String, _api_key: String, msgs: Vec<ChatMessage>) -> Result<()
     };
 
     debug!("ChatRequest: {:?}", request);
-    
-    let response_json = client
-        .post(endpoint)
-        .json(&request)
-        .send()?
-        .text()?;
+
+    let response_json = client.post(endpoint).json(&request).send()?.text()?;
 
     debug!("ChatResponse: {}", response_json);
 
@@ -119,9 +108,11 @@ pub fn test() -> Result<(), Box<dyn std::error::Error>> {
             content: "hello.".to_string(),
         },
     ];
-    let _resp = call("deepseek-r1:8b".to_string(),
-                        "Do not need".to_string(),
-                        msgs)?;
+    let _resp = call(
+        "deepseek-r1:8b".to_string(),
+        "Do not need".to_string(),
+        msgs,
+    )?;
 
     Ok(())
 }

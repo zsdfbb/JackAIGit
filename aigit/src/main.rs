@@ -2,9 +2,10 @@ use std::path::{PathBuf};
 use std::process::exit;
 use std::error::Error;
 
-use git2::TreeBuilder;
 use log::{debug, info, error};
 
+mod api;
+mod config;
 mod command;
 mod ollama;
 
@@ -42,7 +43,6 @@ fn cur_is_git_repo() -> bool {
     false
 }
 
-
 fn main() -> Result<(), Box<dyn Error>> {
     logger_init(String::from("debug"));
 
@@ -67,6 +67,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         debug!("current directory is a git repository.")
     }
+
+    debug!("config:\n{:?}", *config::G_CONFIG);
 
     let ret = command::handle();
     if ret.is_err() {

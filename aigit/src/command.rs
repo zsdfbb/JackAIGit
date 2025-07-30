@@ -1,20 +1,22 @@
 use clap::Parser;
-use git2::{DiffFormat, DiffOptions, Repository};
 use log::{debug, info};
 use std::error::Error;
-use std::io::{self, ErrorKind};
 use std::process::{Child, Command, Stdio};
 use std::vec;
 
-use crate::config::{G_AI_API_KEY, G_AI_MODEL, G_CONFIG};
-use crate::ollama::{self, ChatMessage};
+use crate::config::{G_AI_API_KEY, G_AI_MODEL, G_AI_PLATFORM};
+use crate::api::{self, get_chat, get_platform_list, ChatMessage, ChatRequest};
+use crate::ollama::{self};
 
 #[derive(Parser)]
 #[command(version, author, about, long_about = None)]
 struct Cli {
+    /// Show supported platforms
+    #[arg(short, long)]
+    platforms: bool,
     // subcommand
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -22,7 +24,7 @@ enum Commands {
     /// Show the diff between the working tree and the index
     Diff {
         /// specify the commit index such as HEAD^
-        index: String,
+        index: Option<String>,
         /// explain the diff between the working tree and the index
         #[arg(short, long)]
         explain: bool,
@@ -57,6 +59,7 @@ enum Commands {
         #[arg(short, long)]
         explain: bool,
     },
+
 }
 
 fn prompt_diff(diff_content: String) -> Vec<ChatMessage> {
@@ -104,7 +107,7 @@ fn prompt_diff(diff_content: String) -> Vec<ChatMessage> {
         },
         ChatMessage {
             role: "user".to_string(),
-            content: "".to_string(),
+            content: "你好，请使用中文解释下面的代码修改：\n".to_string(),
         },
     ];
 
@@ -233,11 +236,12 @@ fn get_git_show(index: String) -> Result<String, Box<dyn Error>> {
 fn handle_diff(index: String, explain: bool) -> Result<(), Box<dyn Error>> {
     // 输出 diff 内容
     let diff_content = get_git_diff(index)?;
-    println!("{}", diff_content);
+    // println!("{}", diff_content);
 
     if explain {
         debug!("Explaining...");
-        ollama::chat(G_AI_MODEL.clone(), G_AI_API_KEY.clone(), prompt_diff(diff_content));
+        let chat: api::ChatFn = get_chat(G_AI_PLATFORM.clone());
+        let _ = chat(G_AI_MODEL.clone(), G_AI_API_KEY.clone(), prompt_diff(diff_content));
     }
 
     Ok(())
@@ -259,19 +263,26 @@ fn handle_show(index: String, explain: bool) -> Result<(), Box<dyn Error>> {
 pub fn handle() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
+    if cli.platforms {
+        let pl = get_platform_list();
+        println!("Supported Platforms:");
+        pl.iter().for_each(|item| println!("{}", item));
+    }
+
     match cli.command {
-        Commands::Diff { index, explain } => {
-            handle_diff(index, explain)?;
+        Some(Commands::Diff { index, explain }) => {
+            handle_diff(index.unwrap_or("HEAD^".to_string()), explain)?;
         }
-        Commands::Commit {
+        Some(Commands::Commit {
             message,
             explain,
             template,
-        } => {}
-        Commands::List { number, explain } => {}
-        Commands::Show { hash, explain } => {
+        }) => {}
+        Some(Commands::List { number, explain }) => {}
+            Some(Commands::Show { hash, explain }) => {
             handle_show(hash, explain)?;
         }
+        _ => {}
     }
 
     Ok(())

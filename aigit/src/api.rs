@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{de::value, Deserialize, Serialize};
 use lazy_static::lazy_static;
 
 use crate::ollama::{self};
@@ -24,9 +24,35 @@ pub type ChatFn = fn(
     msgs: Vec<ChatMessage>,  // 假设 ChatMessage 是具体类型
 ) -> Result<(), Box<dyn std::error::Error>>;
 
+pub fn dummy_chat_fn(
+    _model: String,
+    _api_key: String,
+    _msgs: Vec<ChatMessage>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!("Dummy chat function called. Please specify the legal platform name.");
+    Ok(())
+}
 
 lazy_static! {
     static ref CHAT_FN_MAP: Vec<(String, ChatFn)> = vec![
         ("ollama".to_string(), ollama::chat),
     ];
+}
+
+pub fn get_chat(platform: String) -> ChatFn {
+    for (key, f) in CHAT_FN_MAP.iter() {
+        if *key == platform {
+            return *f;
+        }
+    }
+    
+    dummy_chat_fn
+}
+
+pub fn get_platform_list() -> Vec<String> {
+    let mut ret: Vec<String> = vec![];
+    for (key, _) in CHAT_FN_MAP.iter() {
+        ret.push(key.clone());
+    }
+    ret
 }

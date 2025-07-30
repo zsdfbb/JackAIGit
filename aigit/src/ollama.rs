@@ -1,8 +1,10 @@
+use std::time::Duration;
+
 use log::{debug, error};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::api::{ChatMessage, ChatRequest};
+use crate::{api::{ChatMessage, ChatRequest}, config::G_AI_PLATFORM};
 
 // 定义完整的响应结构
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,19 +61,22 @@ pub fn chat(
     msgs: Vec<ChatMessage>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // 构建请求
-    let endpoint = "http://localhost:11434/api/chat";
-    let client = Client::new();
-    let request = ChatRequest {
+    let endpoint: &'static str = "http://localhost:11434/api/chat";
+    let client: Client = Client::new();
+    let request: ChatRequest = ChatRequest {
         model: model,
         messages: msgs,
         stream: false,
     };
 
-    debug!("ChatRequest: {:?}", request);
+    // debug!("ChatRequest: {:?}", request);
 
-    let response_json = client.post(endpoint).json(&request).send()?.text()?;
+    let response_json = client.post(endpoint).json(&request)
+        .timeout(Duration::from_secs(300))
+        .send().expect("Failed to send chat")
+        .text().expect("Failed to get response text");
 
-    debug!("ChatResponse: {}", response_json);
+    // debug!("ChatResponse: {}", response_json);
 
     match serde_json::from_str::<OllamaChatResponse>(&response_json) {
         Ok(response) => {

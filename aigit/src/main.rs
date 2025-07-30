@@ -68,7 +68,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         debug!("current directory is a git repository.")
     }
 
-    debug!("config:\n{:?}", *config::G_CONFIG);
+    // debug!("config:\n{:?}", *config::G_CONFIG);
 
     let ret = command::handle();
     if ret.is_err() {

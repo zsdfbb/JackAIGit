@@ -23,7 +23,7 @@ fi
 # install aigit
 pushd aigit
 cargo build --release
-cp target/release/aigit ${HOME}/.local/bin
+sudo cp target/release/aigit /usr/local/bin
 popd
 
 mkdir -p ${HOME}/.config/aigit

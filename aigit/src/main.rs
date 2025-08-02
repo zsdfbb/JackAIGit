@@ -1,13 +1,17 @@
 use std::path::{PathBuf};
 use std::process::exit;
 use std::error::Error;
-
+use std::sync::atomic::{AtomicBool, Ordering};
 use log::{debug, info, error};
 
 mod api;
 mod config;
 mod command;
 mod ollama;
+
+// 创建全局的原子变量
+static G_DEBUG: AtomicBool = AtomicBool::new(false);
+
 
 fn logger_init(log_level: String) {
     let mut elog_builder = env_logger::Builder::new();
@@ -18,7 +22,6 @@ fn logger_init(log_level: String) {
     } else {
         elog_builder.filter(None, log::LevelFilter::Info);
     }
-
     elog_builder.init();
 }
 
@@ -44,7 +47,13 @@ fn cur_is_git_repo() -> bool {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    logger_init(String::from("debug"));
+    
+    if cfg!(feature = "debug") {
+        logger_init(String::from("debug"));
+        G_DEBUG.store(true, Ordering::Relaxed);
+    } else {
+        logger_init(String::from("info"));
+    }
 
     // 是否定义了 test #![feature()] 参数
     if cfg!(feature = "test") {
@@ -67,8 +76,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         debug!("current directory is a git repository.")
     }
-
-    // debug!("config:\n{:?}", *config::G_CONFIG);
 
     let ret = command::handle();
     if ret.is_err() {

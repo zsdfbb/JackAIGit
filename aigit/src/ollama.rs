@@ -1,10 +1,10 @@
 use std::time::Duration;
-
+#[allow(unused_imports)]
 use log::{debug, error};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::{api::{ChatMessage, ChatRequest}, config::G_AI_PLATFORM};
+use crate::{api::{ChatMessage, ChatRequest}};
 
 // 定义完整的响应结构
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,7 +59,7 @@ pub fn chat(
     model: String,
     _api_key: String,
     msgs: Vec<ChatMessage>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     // 构建请求
     let endpoint: &'static str = "http://localhost:11434/api/chat";
     let client: Client = Client::new();
@@ -70,31 +70,25 @@ pub fn chat(
     };
 
     // debug!("ChatRequest: {:?}", request);
-
     let response_json = client.post(endpoint).json(&request)
         .timeout(Duration::from_secs(300))
         .send().expect("Failed to send chat")
         .text().expect("Failed to get response text");
 
     // debug!("ChatResponse: {}", response_json);
-
     match serde_json::from_str::<OllamaChatResponse>(&response_json) {
         Ok(response) => {
             // 提取思考过程
             if let Some((__think, answer)) = extract_think_and_answer(&response.message.content) {
-                println!("{}", answer);
+                return Ok(answer);
             }
+            return Ok("Nothing".to_string());
         }
         Err(e) => {
             error!("Fail to get response: {}", e);
-            // 调试用：尝试解析为 Value
-            if let Ok(value) = serde_json::from_str::<serde_json::Value>(&response_json) {
-                error!("original JSON value: {:#?}", value);
-            }
+            return Err(Box::new(e));
         }
     }
-
-    return Ok(());
 }
 
 /*
@@ -113,7 +107,7 @@ pub fn test() -> Result<(), Box<dyn std::error::Error>> {
             content: "hello.".to_string(),
         },
     ];
-    let _resp = call(
+    let _resp = chat(
         "deepseek-r1:8b".to_string(),
         "Do not need".to_string(),
         msgs,

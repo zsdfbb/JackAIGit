@@ -1,12 +1,12 @@
 use clap::Parser;
-use log::{debug, info};
+#[allow(unused_imports)]
+use log::{debug, error, info};
 use std::error::Error;
 use std::process::{Child, Command, Stdio};
 use std::vec;
 
+use crate::api::{self, ChatMessage, get_chat, get_platform_list};
 use crate::config::{G_AI_API_KEY, G_AI_MODEL, G_AI_PLATFORM};
-use crate::api::{self, get_chat, get_platform_list, ChatMessage, ChatRequest};
-use crate::ollama::{self};
 
 #[derive(Parser)]
 #[command(version, author, about, long_about = None)]
@@ -31,15 +31,15 @@ enum Commands {
     },
     /// Commit the current changes
     Commit {
-        /// specify the commit message
-        #[arg(short, long)]
-        message: Option<String>,
         /// generate commit message
         #[arg(short, long)]
         explain: bool,
-        /// specify the git commit message template
+        /// sign the commit
         #[arg(short, long)]
-        template: Option<String>,
+        signoff: bool,
+        /// Directly use AI-generated commit message
+        #[arg(short, long)]
+        direct: bool,
     },
     /// List all commits
     List {
@@ -53,61 +53,61 @@ enum Commands {
     /// Show commit details
     Show {
         /// commit hash
-        #[arg(short, long)]
-        hash: String,
+        hash: Option<String>,
         /// explain selected commit
         #[arg(short, long)]
         explain: bool,
     },
-
 }
 
 fn prompt_diff(diff_content: String) -> Vec<ChatMessage> {
     let mut diff_msgs: Vec<ChatMessage> = vec![
         ChatMessage {
             role: "system".to_string(),
-            content: "你是一个资深软件工程师，擅长解析Git补丁。请分析以下Git Patch内容，用清晰的结构解释修改内容：
+            content: 
+"You are a senior software engineer skilled in parsing Git patches. Please analyze the following Git patch content and explain the changes in a clear, structured manner:
 
-### 输入要求：
-1. 用户会提供一段Git Patch文本（格式为`git diff`输出）
-2. 你需要提取以下关键信息：
-   - 修改的文件路径
-   - 每个文件的变更类型（添加/删除/修改/重命名）
-   - 代码变更的核心逻辑（用自然语言描述）
-   - 特别注意`@@`行号范围标识的代码块
-   - 如果存在冲突标记（如`<<<<<<<`），需单独说明
+### Input Requirements:
+    1. The user will provide a Git patch text (in `git diff` output format).  
+    2. You must extract the following key information:  
+    - Modified file paths  
+    - Change type for each file (Added/Deleted/Modified/Renamed)  
+    - Core logic of code changes (described in natural language)  
+    - Pay special attention to code blocks marked by `@@` line range indicators  
+    - If conflict markers (e.g., `<<<<<<<`) exist, highlight them separately  
 
-### 输出规范：
-用以下Markdown格式回复：
-```markdown
-## 分析报告
-**总览**:
-- 修改文件数：X  
-- 主要变更类型：[功能新增/缺陷修复/重构/配置调整等]
+ ### Output Specification:
+    Reply using the following Markdown format:  
+    ````markdown  
+    ## Analysis Report  
+    **Overview**:  
+    - Modified files: X  
+    - Primary change type: [Feature addition/Bug fix/Refactoring/Configuration adjustment/etc.]  
 
-### 文件分析：
-1. **文件路径**：`src/example.py`  
-   - **变更类型**：修改  
-   - **行号范围**：@@ -15,6 +15,8 @@ (表示原文件第15行起6行 → 新版本第15行起8行)  
-   - **变更描述**：  
-     - 在`calculate()`函数中添加了参数校验逻辑  
-     - 修复了除零错误（新增第18-19行）  
-     - 删除过时的日志输出（原第22行）
+### File Analysis:  
+    1. **File path**: `src/example.py`  
+    - **Change type**: Modified  
+    - **Line range**: @@ -15,6 +15,8 @@ (Original: 6 lines from line 15 → New: 8 lines from line 15)  
+    - **Change description**:  
+        - Added parameter validation logic in `calculate()` function  
+        - Fixed division-by-zero error (new lines 18-19)  
+        - Removed deprecated log output (original line 22)  
 
-2. **文件路径**：`config/env.yaml`  
-   - **变更类型**：新增  
-   - **关键变更**：添加了数据库连接池配置参数
+    2. **File path**: `config/env.yaml`  
+    - **Change type**: Added  
+    - **Key changes**: Added database connection pool parameters  
 
-[按此格式继续其他文件...]
+    [Continue for other files in this format...]  
 
-### 注意：
-- 用`>` 符号引用关键代码片段（不超过3行）
-- 发现冲突标记时用⚠️警告
-- 不要猜测未出现在Patch中的上下文".to_string(),
+### Notes:  
+    - Use `>` to quote critical code snippets (≤ 3 lines)  
+    - Use ⚠️ warning when conflict markers are detected  
+    - Do not speculate about context not present in the patch"
+            .to_string(),
         },
         ChatMessage {
             role: "user".to_string(),
-            content: "你好，请使用中文解释下面的代码修改：\n".to_string(),
+            content: "Hello, please explain the code modification below. \n".to_string(),
         },
     ];
 
@@ -119,7 +119,8 @@ fn prompt_create_commit_msg(commit_content: String) -> Vec<ChatMessage> {
     let mut commit_msgs: Vec<ChatMessage> = vec![
         ChatMessage {
             role: "system".to_string(),
-            content: "You are an expert in conventional commits. Generate a commit message strictly following this format:
+            content: 
+"You are an expert in conventional commits. Generate a commit message strictly following this format:
 
 <type>(<scope>): <subject>
 <body>
@@ -152,35 +153,22 @@ Rules:
    - Reference issues (e.g., 'Closes #123')
    - BREAKING CHANGE notices if applicable
 
-Analyze this git diff and generate the commit message accordingly. Output ONLY the commit message with no additional text.".to_string(),
+Analyze this git diff and generate the commit message accordingly. 
+Output ONLY the commit message with no additional text."
+            .to_string(),
         },
         ChatMessage {
             role: "user".to_string(),
-            content: "This is Git diff:\n".to_string(),
+            content: 
+"Please help me to generate commit message. Please ensure the output is as concise as possible.
+The following is Git patch's description:\n"
+.to_string(),
         },
     ];
 
     commit_msgs[1].content.push_str(commit_content.as_str());
 
     commit_msgs
-}
-
-
-fn prompt_show(commit_content: String) -> Vec<ChatMessage> {
-    let mut tmp_prompt: Vec<ChatMessage> = vec![
-        ChatMessage {
-            role: "system".to_string(),
-            content: "".to_string(),
-        },
-        ChatMessage {
-            role: "user".to_string(),
-            content: "This is Git diff:\n".to_string(),
-        },
-    ];
-
-    tmp_prompt[1].content.push_str(commit_content.as_str());
-
-    tmp_prompt
 }
 
 fn get_git_res(child: Child) -> Result<String, Box<dyn Error>> {
@@ -199,30 +187,17 @@ fn get_git_res(child: Child) -> Result<String, Box<dyn Error>> {
     }
 }
 
-fn get_git_diff(index: String) -> Result<String, Box<dyn Error>> {
-    let args = [
+fn git_diff(index: String, only_staged: bool) -> Result<String, Box<dyn Error>> {
+    let mut args = vec![
         "diff",       // 显示当前修改
         "--no-color", // 禁用外部差异工具
         "-U3",        // 显示3行上下文
-        index.as_str(),
     ];
 
-    let child = Command::new("git")
-        .args(args)
-        .stdout(Stdio::piped()) // 捕获标准输出
-        .stderr(Stdio::piped()) // 捕获错误输出
-        .spawn()?; // 异步启动
-
-    return get_git_res(child);
-}
-
-fn get_git_show(index: String) -> Result<String, Box<dyn Error>> {
-    let args = [
-        "show",       // 显示指定index
-        "--no-color", // 禁用外部差异工具
-        "-U3",        // 显示3行上下文
-        index.as_str(),
-    ];
+    if only_staged {
+        args.push("--staged");
+    }
+    args.push(&index.as_str());
 
     let child = Command::new("git")
         .args(args)
@@ -235,28 +210,126 @@ fn get_git_show(index: String) -> Result<String, Box<dyn Error>> {
 
 fn handle_diff(index: String, explain: bool) -> Result<(), Box<dyn Error>> {
     // 输出 diff 内容
-    let diff_content = get_git_diff(index)?;
-    // println!("{}", diff_content);
+    let diff_content = git_diff(index, false)?;
+    println!("============================================================================");
+    println!("Git Diff Content");
+    println!("============================================================================");
+    println!("{}", diff_content);
 
     if explain {
-        debug!("Explaining...");
+        println!("============================================================================");
+        println!("Explaining...\n");
         let chat: api::ChatFn = get_chat(G_AI_PLATFORM.clone());
-        let _ = chat(G_AI_MODEL.clone(), G_AI_API_KEY.clone(), prompt_diff(diff_content));
+        let diff_explain = chat(
+            G_AI_MODEL.clone(),
+            G_AI_API_KEY.clone(),
+            prompt_diff(diff_content),
+        )?;
+        println!("{}", diff_explain);
     }
 
     Ok(())
 }
 
-fn handle_show(index: String, explain: bool) -> Result<(), Box<dyn Error>> {
+fn git_show(hash: String) -> Result<String, Box<dyn Error>> {
+    let args = [
+        "show",       // 显示指定index
+        "--no-color", // 禁用外部差异工具
+        "-U3",        // 显示3行上下文
+        hash.as_str(),
+    ];
+
+    let child = Command::new("git")
+        .args(args)
+        .stdout(Stdio::piped()) // 捕获标准输出
+        .stderr(Stdio::piped()) // 捕获错误输出
+        .spawn()?; // 异步启动
+
+    return get_git_res(child);
+}
+
+fn handle_show(hash: String, explain: bool) -> Result<(), Box<dyn Error>> {
     // 输出 diff 内容
-    let show_content = get_git_show(index)?;
+    let show_content = git_show(hash)?;
+    println!("============================================================================");
+    println!("Git Show Content");
+    println!("============================================================================");
     println!("{}", show_content);
 
     if explain {
-        debug!("Explaining...");
-        ollama::chat(G_AI_MODEL.clone(), G_AI_API_KEY.clone(), prompt_show(show_content));
+        println!("============================================================================");
+        println!("Explaining...\n");
+        let chat: api::ChatFn = get_chat(G_AI_PLATFORM.clone());
+        let show_explain = chat(
+            G_AI_MODEL.clone(),
+            G_AI_API_KEY.clone(),
+            prompt_diff(show_content),
+        )?;
+        println!("{}", show_explain);
     }
 
+    Ok(())
+}
+
+fn git_commit(signoff: bool, directly: bool, message: String) -> Result<String, Box<dyn Error>> {
+    let mut v_args = vec!["commit"];
+    
+    if signoff {
+        v_args.push("--signoff");
+    }
+    if !directly {
+        v_args.push("--edit");
+    }
+
+    v_args.push("-m");
+    v_args.push(message.as_str());
+
+    let status = Command::new("git")
+        .args(v_args)
+        .status()?; // 前台启动
+
+    if status.success() {
+        Ok("Commit successful".to_string())
+    } else {
+        Err("Commit failed".into())
+    }
+}
+
+fn handle_commit(explain: bool, signoff: bool, directly: bool) -> Result<(), Box<dyn Error>> {
+    let diff_content = git_diff("HEAD".to_string(), true)?;
+    println!("============================================================================");
+    println!("Git commit Content");
+    println!("============================================================================");
+    println!("{}", diff_content);
+
+    let mut cm_msg = String::from("# Please edit commit message");
+    if explain {
+        println!("============================================================================");
+        println!("Explaining...");
+        let chat: api::ChatFn = get_chat(G_AI_PLATFORM.clone());
+        let diff_explain = chat(
+            G_AI_MODEL.clone(),
+            G_AI_API_KEY.clone(),
+            prompt_diff(diff_content),
+        )?;
+        println!("{}", diff_explain);
+
+        println!("============================================================================");
+        println!("Generating commit message...\n");
+        cm_msg = chat(
+            G_AI_MODEL.clone(),
+            G_AI_API_KEY.clone(),
+            prompt_create_commit_msg(diff_explain),
+        )?;
+        println!("{}", cm_msg);
+    }
+
+    git_commit(signoff, directly, cm_msg)?;
+
+    Ok(())
+}
+
+fn handle_list(_number: Option<u32>, _explain: bool) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
@@ -271,16 +344,20 @@ pub fn handle() -> Result<(), Box<dyn Error>> {
 
     match cli.command {
         Some(Commands::Diff { index, explain }) => {
-            handle_diff(index.unwrap_or("HEAD^".to_string()), explain)?;
+            handle_diff(index.unwrap_or("HEAD".to_string()), explain)?;
         }
         Some(Commands::Commit {
-            message,
             explain,
-            template,
-        }) => {}
-        Some(Commands::List { number, explain }) => {}
-            Some(Commands::Show { hash, explain }) => {
-            handle_show(hash, explain)?;
+            signoff,
+            direct,
+        }) => {
+            handle_commit(explain, signoff, direct)?;
+        }
+        Some(Commands::List { number, explain }) => {
+            handle_list(number, explain)?;
+        }
+        Some(Commands::Show { hash, explain }) => {
+            handle_show(hash.unwrap_or("HEAD".to_string()), explain)?;
         }
         _ => {}
     }

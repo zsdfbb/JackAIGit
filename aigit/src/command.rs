@@ -165,7 +165,7 @@ Output ONLY the commit message with no additional text."
             content: 
 "
 Please populate the content within the <body> section according to the file granularity.
-Please help me to generate commit message by plain text.
+Please help me to generate commit message by Plaintext. Do not use Json or markdown.
 The following is Git patch's description:\n"
 .to_string(),
         },
@@ -327,6 +327,12 @@ fn handle_commit(explain: bool, signoff: bool, directly: bool) -> Result<(), Box
             prompt_create_commit_msg(diff_explain),
         )?;
         println!("{}", cm_msg);
+
+        // cm_msg 是否是以 ``` 开头？
+        if cm_msg.starts_with("```") {
+            // String 去掉 开头和末尾 ``` 
+            cm_msg = cm_msg.trim_start_matches("```").trim_end_matches("```").to_string();
+        }
     }
 
     git_commit(signoff, directly, cm_msg)?;

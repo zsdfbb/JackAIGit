@@ -7,7 +7,6 @@ use log::{debug, info, error};
 mod api;
 mod config;
 mod command;
-mod ollama;
 
 // 创建全局的原子变量
 static G_DEBUG: AtomicBool = AtomicBool::new(false);

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use lazy_static::lazy_static;
 
-use crate::ollama::{self};
+use crate::api::ollama::{self};
 
 // 定义消息结构
 #[derive(Debug, Serialize, Deserialize)]

@@ -4,7 +4,7 @@ use log::{debug, error};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::{api::{ChatMessage, ChatRequest}};
+use crate::{api::common::{ChatMessage, ChatRequest}};
 
 // 定义完整的响应结构
 #[derive(Debug, Serialize, Deserialize)]

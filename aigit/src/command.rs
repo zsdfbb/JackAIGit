@@ -5,7 +5,7 @@ use std::error::Error;
 use std::process::{Child, Command, Stdio};
 use std::vec;
 
-use crate::api::{self, ChatMessage, get_chat, get_platform_list};
+use crate::api::common::{ChatFn, ChatMessage, get_chat, get_platform_list};
 use crate::config::{G_AI_API_KEY, G_AI_MODEL, G_AI_PLATFORM};
 
 #[derive(Parser)]
@@ -23,7 +23,7 @@ struct Cli {
 enum Commands {
     /// Show the diff between the working tree and the index
     Diff {
-        /// specify the commit index such as HEAD^
+        /// specify the path\file\commit
         index: Option<String>,
         /// explain the diff between the working tree and the index
         #[arg(short, long)]
@@ -160,7 +160,8 @@ Output ONLY the commit message with no additional text."
         ChatMessage {
             role: "user".to_string(),
             content: 
-"Please help me to generate commit message. Please ensure the output is as concise as possible.
+"Please help me to generate commit message. 
+Please populate the content within the <body> section according to the file granularity.
 The following is Git patch's description:\n"
 .to_string(),
         },
@@ -219,7 +220,7 @@ fn handle_diff(index: String, explain: bool) -> Result<(), Box<dyn Error>> {
     if explain {
         println!("============================================================================");
         println!("Explaining...\n");
-        let chat: api::ChatFn = get_chat(G_AI_PLATFORM.clone());
+        let chat: ChatFn = get_chat(G_AI_PLATFORM.clone());
         let diff_explain = chat(
             G_AI_MODEL.clone(),
             G_AI_API_KEY.clone(),
@@ -259,7 +260,7 @@ fn handle_show(hash: String, explain: bool) -> Result<(), Box<dyn Error>> {
     if explain {
         println!("============================================================================");
         println!("Explaining...\n");
-        let chat: api::ChatFn = get_chat(G_AI_PLATFORM.clone());
+        let chat: ChatFn = get_chat(G_AI_PLATFORM.clone());
         let show_explain = chat(
             G_AI_MODEL.clone(),
             G_AI_API_KEY.clone(),
@@ -306,7 +307,7 @@ fn handle_commit(explain: bool, signoff: bool, directly: bool) -> Result<(), Box
     if explain {
         println!("============================================================================");
         println!("Explaining...");
-        let chat: api::ChatFn = get_chat(G_AI_PLATFORM.clone());
+        let chat: ChatFn = get_chat(G_AI_PLATFORM.clone());
         let diff_explain = chat(
             G_AI_MODEL.clone(),
             G_AI_API_KEY.clone(),

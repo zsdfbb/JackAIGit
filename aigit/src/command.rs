@@ -163,8 +163,9 @@ Output ONLY the commit message with no additional text."
         ChatMessage {
             role: "user".to_string(),
             content: 
-"Please help me to generate commit message. 
+"
 Please populate the content within the <body> section according to the file granularity.
+Please help me to generate commit message by plain text.
 The following is Git patch's description:\n"
 .to_string(),
         },

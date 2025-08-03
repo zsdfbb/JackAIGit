@@ -70,10 +70,12 @@ pub fn chat(
     };
 
     // debug!("ChatRequest: {:?}", request);
-    let response_json = client.post(endpoint).json(&request)
-        .timeout(Duration::from_secs(300))
-        .send().expect("Failed to send chat")
-        .text().expect("Failed to get response text");
+    let response = client.post(endpoint).json(&request)
+        .timeout(Duration::from_secs(300)).send()?;
+    debug!("response_json: {:?}", response);
+
+    let response_json = response.text()?;
+    debug!("{:?}", response_json);
 
     // debug!("ChatResponse: {}", response_json);
     match serde_json::from_str::<OllamaChatResponse>(&response_json) {

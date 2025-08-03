@@ -58,13 +58,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     if cfg!(feature = "test") {
         info!("test mode enabled!");
 
-        debug!("test command parse...");
-        #[cfg(feature = "test")]
-        command::test();
-
         debug!("test ollama api...");
         #[cfg(feature = "test")]
-        let _test = ollama::test();
+        let _test = api::ollama::test();
 
         exit(0);
     }

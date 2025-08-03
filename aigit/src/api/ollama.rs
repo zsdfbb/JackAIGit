@@ -112,6 +112,7 @@ pub fn test() -> Result<(), Box<dyn std::error::Error>> {
         "Do not need".to_string(),
         msgs,
     )?;
+    println!("{}", _resp);
 
     Ok(())
 }

@@ -375,39 +375,3 @@ pub fn handle() -> Result<(), Box<dyn Error>> {
 
     Ok(())
 }
-
-/*
- * ===========================================================
- * test code
- */
-#[cfg(feature = "test")]
-fn test_options() {
-    println!("command: test options");
-}
-
-#[cfg(feature = "test")]
-fn test_parse_subcommand() {
-    println!("command: test subcommand");
-
-    let cli = Cli::parse();
-    match cli.command {
-        Commands::Diff { index, explain } => {
-            println!("Diff index: {}, explain: {:?}", index, explain);
-        }
-        Commands::Commit { message, explain } => {
-            println!(
-                "Commit specify message: {:?}, explain: {:?}",
-                message, explain
-            );
-        }
-        Commands::List { number, explain } => {
-            println!("List num: {:?}, explain: {:?}", number, explain);
-        }
-    }
-}
-
-#[cfg(feature = "test")]
-pub fn test() {
-    test_options();
-    test_parse_subcommand();
-}

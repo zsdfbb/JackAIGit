@@ -28,6 +28,9 @@ enum Commands {
         /// explain the diff between the working tree and the index
         #[arg(short, long)]
         explain: bool,
+        /// use the staged diff content
+        #[arg(short, long)]
+        staged: bool,
     },
     /// Commit the current changes
     Commit {
@@ -209,9 +212,9 @@ fn git_diff(index: String, only_staged: bool) -> Result<String, Box<dyn Error>> 
     return get_git_res(child);
 }
 
-fn handle_diff(index: String, explain: bool) -> Result<(), Box<dyn Error>> {
+fn handle_diff(index: String, explain: bool, staged: bool) -> Result<(), Box<dyn Error>> {
     // 输出 diff 内容
-    let diff_content = git_diff(index, false)?;
+    let diff_content = git_diff(index, staged)?;
     println!("============================================================================");
     println!("Git Diff Content");
     println!("============================================================================");
@@ -344,8 +347,8 @@ pub fn handle() -> Result<(), Box<dyn Error>> {
     }
 
     match cli.command {
-        Some(Commands::Diff { index, explain }) => {
-            handle_diff(index.unwrap_or("HEAD".to_string()), explain)?;
+        Some(Commands::Diff { index, explain , staged}) => {
+            handle_diff(index.unwrap_or("HEAD".to_string()), explain, staged)?;
         }
         Some(Commands::Commit {
             explain,

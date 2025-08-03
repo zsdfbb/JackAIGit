@@ -341,6 +341,7 @@ fn handle_commit(explain: bool, signoff: bool, directly: bool) -> Result<(), Box
 }
 
 fn handle_list(_number: Option<u32>, _explain: bool) -> Result<(), Box<dyn Error>> {
+    println!("List is not supported yet.");
     Ok(())
 }
 

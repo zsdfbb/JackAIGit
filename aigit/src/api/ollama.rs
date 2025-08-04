@@ -1,10 +1,10 @@
-use std::time::Duration;
 #[allow(unused_imports)]
 use log::{debug, error};
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
-use crate::{api::common::{ChatMessage, ChatRequest}};
+use crate::api::common::{ChatMessage, ChatRequest};
 
 // 定义完整的响应结构
 #[derive(Debug, Serialize, Deserialize)]
@@ -70,8 +70,11 @@ pub fn chat(
     };
 
     // debug!("ChatRequest: {:?}", request);
-    let response = client.post(endpoint).json(&request)
-        .timeout(Duration::from_secs(300)).send()?;
+    let response = client
+        .post(endpoint)
+        .json(&request)
+        .timeout(Duration::from_secs(300))
+        .send()?;
     debug!("response_json: {:?}", response);
 
     let response_json = response.text()?;

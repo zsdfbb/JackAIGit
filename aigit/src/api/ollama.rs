@@ -74,11 +74,22 @@ pub fn chat(
         .post(endpoint)
         .json(&request)
         .timeout(Duration::from_secs(300))
-        .send()?;
-    debug!("response_json: {:?}", response);
+        .send();
 
-    let response_json = response.text()?;
-    debug!("{:?}", response_json);
+    let response_json = match response {
+        Ok(resp) => {
+            if !resp.status().is_success() {
+                error!("Request failed with status: {}", resp.status());
+                error!("Please check whether the model has been installed.");
+                std::process::exit(1);
+            }
+            resp.text()?
+        },
+        Err(e) => {
+            error!("{:?}", e);
+            std::process::exit(1);
+        }
+    };
 
     // debug!("ChatResponse: {}", response_json);
     match serde_json::from_str::<OllamaChatResponse>(&response_json) {

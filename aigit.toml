@@ -11,8 +11,3 @@ api_key = "your api key"
 # platform = "ollama"
 # model = "qwen3-coder:30b"
 # api_key = "your api key"
-
-# siliconflow 参考：
-# platform = "siliconflow"
-# model = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"
-# api_key = "your api key"

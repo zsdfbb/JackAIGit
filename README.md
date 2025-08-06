@@ -2,7 +2,6 @@
 
 Reimagining Git Usage with AI
 
-```
 ```text
 Usage: aigit [OPTIONS] [COMMAND]
 
@@ -18,16 +17,16 @@ Options:
   -h, --help       Print help
   -V, --version    Print version
 ```
-```
-```
 
-```
 ## Install
 
-// please install rust first
+please install rust and git first. And run:
+
 ./install.sh
 
 ## Test
+
+please install aigit first. And run:
 
 ./test.sh
 

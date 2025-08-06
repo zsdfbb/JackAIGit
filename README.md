@@ -2,6 +2,8 @@
 
 Reimagining Git Usage with AI
 
+```
+```text
 Usage: aigit [OPTIONS] [COMMAND]
 
 Commands:
@@ -15,9 +17,14 @@ Options:
   -p, --platforms  Show supported platforms
   -h, --help       Print help
   -V, --version    Print version
+```
+```
+```
 
+```
 ## Install
 
+// please install rust first
 ./install.sh
 
 ## Test

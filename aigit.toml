@@ -1,5 +1,5 @@
 platform = "ollama"
-model = "qwen2.5-coder:7b"
+model = "gpt-oss:20b"
 api_key = "your api key"
 
 # platform = "ollama"

@@ -166,6 +166,7 @@ Output ONLY the commit message with no additional text."
 "
 Please populate the content within the <body> section according to the file granularity.
 Please help me to generate commit message by Plaintext. Do not use Json or markdown.
+Please don't consider it for too long, and keep the output concise.
 The following is Git patch's description:\n"
 .to_string(),
         },

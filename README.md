@@ -33,3 +33,19 @@ please install aigit first. And run:
 ## Demo
 
 ![aigit_commit_usage](images/aigit_commit_usage.gif)
+
+## Question and Answer
+
+### 如何支持局域网中的其他通过IP访问其接口?
+
+在 Linux 环境中，需要修改 ollama 的 service 文件。
+
+1、首先停止ollama服务：systemctl stop ollama 
+
+2、修改ollama的service文件：/etc/systemd/system/ollama.service 在[Service]下边增加两行：
+
+Environment="OLLAMA_HOST=0.0.0.0"
+Environment="OLLAMA_ORIGINS=*"
+
+3、重载daemon文件 sudo systemctl daemon-reload
+4、启动ollama服务 sudo systemctl restart ollama

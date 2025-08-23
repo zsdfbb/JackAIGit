@@ -10,6 +10,12 @@ lazy_static! {
     pub static ref G_AI_PLATFORM: String = G_CONFIG.get_string("platform").expect("Failed to get 'platform' from config.toml");
     pub static ref G_AI_MODEL: String = G_CONFIG.get_string("model").expect("Failed to get 'model' from config.toml");
     pub static ref G_AI_API_KEY: String = G_CONFIG.get_string("api_key").expect("Failed to get 'api_key' from config.toml");
+    // for Base URL
+    pub static ref G_AI_API_BASE_URL: String = G_CONFIG.get_string("api_base_url").expect("Failed to get 'api_base_url' from config.toml");
+    // for API port
+    pub static ref G_AI_API_PORT: String = G_CONFIG.get_string("api_port").expect("Failed to get 'api_port' from config.toml");
+    // for API timeout
+    pub static ref G_AI_API_TIMEOUT: String = G_CONFIG.get_string("api_timeout").expect("Failed to get 'api_timeout' from config.toml");
 }
 
 // 读取 ${HOME}/.config/aigit/config.toml 配置文件

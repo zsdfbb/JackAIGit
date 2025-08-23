@@ -4,7 +4,8 @@ use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-use crate::api::common::{ChatMessage, ChatRequest};
+use crate::{api::common::{ChatMessage, ChatRequest}};
+use crate::config::{G_AI_API_BASE_URL, G_AI_API_PORT};
 
 // 定义完整的响应结构
 #[derive(Debug, Serialize, Deserialize)]
@@ -61,7 +62,8 @@ pub fn chat(
     msgs: Vec<ChatMessage>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     // 构建请求
-    let endpoint: &'static str = "http://localhost:11434/api/chat";
+    let endpoint = format!("{}:{}/api/chat", G_AI_API_BASE_URL.as_str(), G_AI_API_PORT.as_str());
+    debug!("endpoint: {:?}", endpoint);
     let client: Client = Client::new();
     let request: ChatRequest = ChatRequest {
         model: model,
